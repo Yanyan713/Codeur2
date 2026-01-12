@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Codeur Pro - Accès sécurisé</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #1a0033, #0a0014);
+            color: #eae0ff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            color: #c77dff;
+            text-shadow: 0 0 10px #9d4edd;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: rgba(20, 0, 40, 0.6);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px #6a00f4;
+            backdrop-filter: blur(6px);
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(10, 0, 25, 0.8);
+            border: 1px solid #6a00f4;
+            border-radius: 6px;
+            color: #eae0ff;
+            font-size: 15px;
+            box-shadow: 0 0 10px #6a00f4 inset;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin: 6px 4px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #7b2cbf, #9d4edd);
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 0 12px #9d4edd;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 18px #c77dff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .label {
+            margin: 6px 0;
+            font-size: 14px;
+            color: #d0b3ff;
+        }
+
+        .status {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #ffb3ff;
+            text-shadow: 0 0 6px #ff66ff;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #6a00f4;
+            margin: 20px 0;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .col {
+            flex: 1 1 300px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🔐 Codeur Pro — Accès sécurisé</h1>
+
+<div class="container">
+
+    <!-- ACCÈS -->
+    <div id="zoneAcces">
+        <h2>Entrer le mot de passe</h2>
+        <div class="label">Mot de passe</div>
+        <input type="password" id="motPasseEntree">
+        <button onclick="validerAcces()">Valider</button>
+        <div id="statusAcces" class="status"></div>
+    </div>
+
+    <!-- CODEUR (caché tant que pas validé) -->
+    <div id="zoneCodeur" class="hidden">
+
+        <!-- Mot de passe -->
+        <h2>Mot de passe</h2>
+        <div class="label">Mot de passe actuel</div>
+        <input type="text" id="motActuel" readonly>
+
+        <hr>
+
+        <div class="row">
+            <div class="col">
+                <div class="label">Ancien mot de passe</div>
+                <input type="password" id="ancienMot">
+            </div>
+            <div class="col">
+                <div class="label">Nouveau mot de passe</div>
+                <input type="password" id="nouveauMot">
+            </div>
+        </div>
+
+        <button onclick="uiChangerMotDePasse()">Changer le mot de passe</button>
+        <div id="statusMot" class="status"></div>
+
+        <hr>
+
+        <!-- Codeur / Décodeur -->
+        <h2>Codeur / Décodeur</h2>
+
+        <div class="row">
+            <div class="col">
+                <div class="label">Message clair</div>
+                <textarea id="messageClair"></textarea>
+                <button onclick="uiEncoder()">Encoder →</button>
+                <button onclick="copier('messageClair')">Copier</button>
+            </div>
+
+            <div class="col">
+                <div class="label">Message codé</div>
+                <textarea id="messageCode"></textarea>
+                <button onclick="uiDecoder()">← Décoder</button>
+                <button onclick="copier('messageCode')">Copier</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+/* ===============================
+   LOGIQUE DU CODEUR PRO
+   =============================== */
+
+let motDePasse = "abc";
+let motDePasseChange = false;
+
+/* ====== SUBSTITUTION ====== */
+function genererSubstitution(cle) {
+    const alphabet = "abcdefghijklmnopqrstuvwxyz";
+    let seed = 0;
+
+    for (let c of cle) seed += c.charCodeAt(0);
+
+    let arr = alphabet.split("");
+    for (let i = 0; i < arr.length; i++) {
+        let j = (i * 7 + seed) % arr.length;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    let map = {};
+    for (let i = 0; i < alphabet.length; i++) {
+        map[alphabet[i]] = arr[i];
+    }
+    return map;
+}
+
+/* ====== ENCODAGE ====== */
+function encoder(message, cle = motDePasse) {
+    const map = genererSubstitution(cle);
+    const alphabet = "abcdefghijklmnopqrstuvwxyz";
+    let sortie = [];
+
+    message = message.toLowerCase();
+
+    for (let i = 0; i < message.length; i++) {
+        let c = message[i];
+        if (!alphabet.includes(c)) continue;
+
+        let sub = map[c];
+        let r = Math.floor(Math.random() * 10);
+
+        let bloc = (i % 2 === 0) ? (r + sub) : (sub + r);
+        sortie.push(bloc);
+
+        if ((i + 1) % 3 === 0) {
+            let bruit = String.fromCharCode(97 + Math.random() * 26);
+            bruit += Math.floor(Math.random() * 10);
+            bruit += String.fromCharCode(97 + Math.random() * 26);
+            sortie.push(bruit);
+        }
+    }
+
+    return sortie.join(" ");
+}
+
+/* ====== DÉCODAGE ====== */
+function decoder(code, cle = motDePasse) {
+    const map = genererSubstitution(cle);
+    const reverseMap = {};
+    for (let k in map) reverseMap[map[k]] = k;
+
+    const blocs = code.split(" ").filter(b => b.trim() !== "");
+    let resultat = "";
+    let vraiBlocIndex = 0;
+
+    for (let bloc of blocs) {
+        if ((vraiBlocIndex + 1) % 4 === 0) {
+            vraiBlocIndex++;
+            continue;
+        }
+
+        let lettre = bloc.replace(/[0-9]/g, "");
+        if (reverseMap[lettre]) resultat += reverseMap[lettre];
+
+        vraiBlocIndex++;
+    }
+
+    return resultat;
+}
+
+/* ====== CHANGEMENT DE MOT DE PASSE ====== */
+function changerMotDePasse(ancien, nouveau) {
+    if (!nouveau) return "Le nouveau mot de passe est vide.";
+
+    if (!motDePasseChange) {
+        motDePasse = nouveau;
+        motDePasseChange = true;
+        return "Mot de passe défini pour la première fois.";
+    }
+
+    if (ancien !== motDePasse) return "Ancien mot de passe incorrect.";
+
+    motDePasse = nouveau;
+    return "Mot de passe changé.";
+}
+
+/* ===============================
+   SAUVEGARDE DU MOT DE PASSE
+   =============================== */
+
+window.addEventListener("load", () => {
+    const mp = localStorage.getItem("motDePassePro");
+    const mpChange = localStorage.getItem("motDePasseChange");
+
+    if (mp) motDePasse = mp;
+    if (mpChange === "true") motDePasseChange = true;
+
+    document.getElementById("motActuel").value = motDePasse;
+});
+
+/* ===============================
+   ACCÈS AU CODEUR
+   =============================== */
+
+function validerAcces() {
+    const entree = document.getElementById("motPasseEntree").value;
+
+    if (entree === motDePasse) {
+        document.getElementById("zoneAcces").classList.add("hidden");
+        document.getElementById("zoneCodeur").classList.remove("hidden");
+    } else {
+        document.getElementById("statusAcces").textContent = "Mot de passe incorrect.";
+    }
+}
+
+/* ===============================
+   UI
+   =============================== */
+
+function uiEncoder() {
+    const clair = document.getElementById("messageClair").value;
+    document.getElementById("messageCode").value = encoder(clair);
+}
+
+function uiDecoder() {
+    const code = document.getElementById("messageCode").value;
+    document.getElementById("messageClair").value = decoder(code);
+}
+
+function uiChangerMotDePasse() {
+    const ancien = document.getElementById("ancienMot").value;
+    const nouveau = document.getElementById("nouveauMot").value;
+
+    const msg = changerMotDePasse(ancien, nouveau);
+    document.getElementById("statusMot").textContent = msg;
+    document.getElementById("motActuel").value = motDePasse;
+
+    localStorage.setItem("motDePassePro", motDePasse);
+    localStorage.setItem("motDePasseChange", motDePasseChange);
+
+    document.getElementById("ancienMot").value = "";
+    document.getElementById("nouveauMot").value = "";
+}
+
+/* ===============================
+   COPIER
+   =============================== */
+
+function copier(id) {
+    const el = document.getElementById(id);
+    el.select();
+    document.execCommand("copy");
+}
+</script>
+
+</body>
+</html>
